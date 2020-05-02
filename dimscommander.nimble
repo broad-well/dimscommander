@@ -11,4 +11,4 @@ task bench, "Runs benchmark tests":
 
 # Dependencies
 
-requires "nim >= 1.2.0", "dimscord >= 0.0.9"
+requires "nim >= 1.2.0", "dimscord >= 0.0.9", "macroutils"
