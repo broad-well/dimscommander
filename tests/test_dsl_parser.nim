@@ -91,7 +91,7 @@ static:
         handler: StmtList(handler),
         handlerParamIdent: "msg"
       )
-      let actual = parseCommand(ast).dump
+      let actual = parseCommand(ast)
       
       # Miraculously "assert expected == actual" fails here. Idk why.
       assert expected.name == actual.name
