@@ -12,7 +12,7 @@ func parseHelpTextTuple(this: var CommandDef, target: NimNode) =
       this.help.description = some(asgn[1].strVal)
     else:
       error("Unknown named tuple item in help definition: " & asgn[0].strVal &
-            "; available values are 'title' and 'description'")
+            "; available values are 'title' and 'description'", asgn[0])
 
 func parseHelp(this: var CommandDef, target: NimNode) =
   case target.kind
@@ -20,27 +20,30 @@ func parseHelp(this: var CommandDef, target: NimNode) =
   of nnkStrLit: this.help.title = some(target.strVal)
   else:
     error("Unsupported assignment target for help." &
-          " Try a string literal (\"...\") or a named tuple (title: ..., description: ...)")
+          " Try a string literal (\"...\") or a named tuple (title: ..., description: ...)", target)
 
-func typedescToInputLimits(desc: NimNode): InputLimits
-func varargsToInputLimits(call: NimNode): InputLimits =
-  expectIdent(call[1], "varargs")
-  let argType = typedescToInputLimits(call[2])
-  return InputLimits(inputType: Varargs, argType: argType.inputType)
-
-func typedescToInputLimits(desc: NimNode): InputLimits =
-  if desc.kind == nnkCall:
-    return varargsToInputLimits(desc)
-
-  expectKind(desc, {nnkSym})
+func singleArgToInputLimits(desc: NimNode): InputLimits =
   result.inputType = case desc.strVal
   of "int": Int
   of "float": Float
   of "string": String
   else:
-    error("Invalid argument type: " & desc.strVal & ". Possible values are int, float, string")
+    error("Invalid argument type: " & desc.strVal & ". Possible values are int, float, string", desc)
     return
-  
+
+func varargsToInputLimits(call: NimNode): InputLimits =
+  expectIdent(call[1], "varargs")
+  let argType = singleArgToInputLimits(call[2])
+  return InputLimits(inputType: Varargs, argType: argType.inputType)
+
+func typedescToInputLimits(desc: NimNode): InputLimits =
+  result = case desc.kind
+  of nnkCall: varargsToInputLimits(desc)
+  of nnkSym: singleArgToInputLimits(desc)
+  else:
+    error("Invalid input limit. Must be Call (varargs) or Sym (a single type)", desc)
+    return
+
 func parseCommandArgsTable(this: var CommandDef, table: NimNode) =
   var args = newSeqOfCap[Argument](table.len)
   for colonExpr in table:
@@ -68,7 +71,7 @@ func parseCommandArgs(this: var CommandDef, target: NimNode) =
     this.parseCommandArgsTable(target)
   else:
     error("Unsupported assignment target for args." &
-          " Try a tuple (int, int, float) or a table constructor ({\"first param\": int})")
+          " Try a tuple (int, int, float) or a table constructor ({\"first param\": int})", target)
   
 func parseCallAssign(this: var CommandDef, attribute: string, target: NimNode) =
   case attribute
@@ -78,18 +81,18 @@ func parseCallAssign(this: var CommandDef, attribute: string, target: NimNode) =
     this.parseCommandArgs(target)
   else:
     error("Unknown named parameter: " & attribute &
-          "; available parameters are 'help' and 'args'")
+          "; available parameters are 'help' and 'args'", target)
 
 
 func parseCallParams(this: var CommandDef, call: seq[NimNode]) =
   this.name = call[0].strVal
   
   for assignIndex in 1 ..< call.len:
-    let assign = call[assignIndex]
-    let attribute = assign[0].strVal
-    let attrValue = assign[1]
-    
-    this.parseCallAssign(attribute, attrValue)
+    let
+      assign = call[assignIndex] # "help=(...)"
+      attribute = assign[0].strVal
+      target = assign[1]
+    this.parseCallAssign(attribute, target)
     
 
 func parseCommand*(ast: NimNode): CommandDef =
