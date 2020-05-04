@@ -1,4 +1,4 @@
-# Dimscommander
+# <img src="img/dimscommander.png" width="42"> Dimscommander
 Abstractions and tools for quickly building command-based Discord chatbots. Depends on KrispPurg's [Dimscord](https://github.com/krisppurg/dimscord).
 
 ## Philosophies (in this order)
@@ -10,7 +10,6 @@ Abstractions and tools for quickly building command-based Discord chatbots. Depe
 
 **Benchmark name**|**Time per attempt**
 :-----:|:-----:
-tokenization|1008.9 ns
-handler table|570.7 ns
+tokenization|2018.2 ns
+handler table|782.2 ns
 
-_Last updated: 2020-04-29_
