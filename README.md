@@ -1,4 +1,4 @@
-# <img src="img/dimscommander.png" width="42"> Dimscommander
+# <img src="img/dimscommander.png" height="32"> Dimscommander
 Abstractions and tools for quickly building command-based Discord chatbots. Depends on KrispPurg's [Dimscord](https://github.com/krisppurg/dimscord).
 
 ## Philosophies (in this order)
