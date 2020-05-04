@@ -14,14 +14,14 @@ func `==`(a, b: InputLimits): bool =
   if a.inputType == Varargs:
     return a.argType == b.argType
   return true
-  
+
 static:
   block commandDefinition:
     test "accept first unnamed argument as name":
       let ast = quote do:
         command("name") as _:
           discard
-      
+
       assert parseCommand(ast).name == "name"
 
     # I can't verify errors...
@@ -30,7 +30,7 @@ static:
       let ast = quote do:
         command("exam", help="Examine the macro's implementation") as _:
           discard
-      
+
       assert parseCommand(ast).help.title ==
           some("Examine the macro's implementation")
 

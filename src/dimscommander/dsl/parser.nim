@@ -53,16 +53,16 @@ func parseCommandArgsTable(this: var CommandDef, table: NimNode) =
       label = colonExpr[0].strVal
       typeDesc = colonExpr[1]
     args.add Argument(label: some(label), limits: typedescToInputLimits(typeDesc))
-  
+
   this.args = some(args)
 
 func parseCommandArgsTuple(this: var CommandDef, target: NimNode) =
   var args = newSeqOfCap[Argument](target.len)
   for arg in target.children():
      args.add Argument(limits: typedescToInputLimits(arg))
-     
+
   this.args = some(args)
-  
+
 func parseCommandArgs(this: var CommandDef, target: NimNode) =
   case target.kind
   of nnkPar:
@@ -72,7 +72,7 @@ func parseCommandArgs(this: var CommandDef, target: NimNode) =
   else:
     error("Unsupported assignment target for args." &
           " Try a tuple (int, int, float) or a table constructor ({\"first param\": int})", target)
-  
+
 func parseCallAssign(this: var CommandDef, attribute: string, target: NimNode) =
   case attribute
   of "help":
@@ -86,19 +86,19 @@ func parseCallAssign(this: var CommandDef, attribute: string, target: NimNode) =
 
 func parseCallParams(this: var CommandDef, call: seq[NimNode]) =
   this.name = call[0].strVal
-  
+
   for assignIndex in 1 ..< call.len:
     let
       assign = call[assignIndex] # "help=(...)"
       attribute = assign[0].strVal
       target = assign[1]
     this.parseCallAssign(attribute, target)
-    
+
 
 func parseCommand*(ast: NimNode): CommandDef =
   var callArgs = newSeq[NimNode]()
   var handlerInput, handler: NimNode
-  
+
   StmtList(ast).extract do:
     command(`callArgs*`) as `handlerInput`:
       `handler`
@@ -107,3 +107,4 @@ func parseCommand*(ast: NimNode): CommandDef =
   result.parseCallParams(callArgs)
   result.handler = handler
   result.handlerParamIdent = handlerInput.strVal
+
