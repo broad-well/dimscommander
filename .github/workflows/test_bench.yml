@@ -30,7 +30,7 @@ jobs:
         export PATH=$HOME/.nimble/bin:$PATH
 
     - name: Test project
-      run: nimble test
+      run: $HOME/.nimble/bin/nimble test
     
     - name: Run benchmarks
-      run: nimble bench
+      run: $HOME/.nimble/bin/nimble bench
