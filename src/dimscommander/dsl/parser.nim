@@ -122,3 +122,6 @@ func parseCommands*(ast: NimNode): seq[CommandDef] =
       var command = parseCommand(child)
       command.name = prefix & command.name
       result.add command
+
+func parseSetupBlock*(ast: NimNode): NimNode =
+  ast[1]

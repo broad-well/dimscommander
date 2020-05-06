@@ -1,5 +1,4 @@
-switch("d", "release")
-switch("passC", "-flto")
-switch("passC", "-march=native")
-switch("passC", "-Ofast")
+switch("d", "danger")
+switch("passC", "-flto -march=native -Ofast")
+switch("passL", "-flto")
 switch("gc", "arc")

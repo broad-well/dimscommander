@@ -130,3 +130,14 @@ static:
       
       let commands = parseCommands(ast)
       assert commands.mapIt(it.name) == @[">make", ">gcc", ">clang"]
+
+    test "extract setup block":
+      let body = quote do:
+        echo "hello bot!"
+      
+      let ast = quote do:
+        setup:
+          `body`
+
+      let handler = parseSetupBlock(ast)
+      assert handler == StmtList body
