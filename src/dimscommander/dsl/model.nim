@@ -33,8 +33,9 @@ type
 
   CommandBot* = ref object
     commands*: seq[CommandDef]
-    initializer*: ?Handler
+    initializer*: ?NimNode
     name*: string
+    clientIdent*: string
 
   BadSyntax* = ref object of CatchableError
     node*: NimNode
@@ -46,7 +47,7 @@ type
   CodeParser* = concept parser
     parser.name is string
     parser.parse(NimNode) is CommandBot
-  
+
   CodeGenerator* = concept gen
     gen.name is string
     gen.generate(CommandBot) is NimNode

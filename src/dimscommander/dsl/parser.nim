@@ -137,4 +137,40 @@ func parseCommands*(ast: NimNode): seq[CommandDef] =
       result.add command
 
 func parseSetupBlock*(ast: NimNode): NimNode =
-  ast[1]
+  ast.expectKind nnkCall
+  ast.expectLen 2
+  ast[0].expectIdent "setup"
+  ast[1].expectKind nnkStmtList
+
+  return ast[1]
+
+func dispatchDefCall(bot: var CommandBot, call: NimNode) =
+  call.expectMinLen 2
+
+  case call[0].strVal
+  of "commands":
+    bot.commands.add(parseCommands(call))
+  of "setup":
+    bot.initializer = some(parseSetupBlock(call))
+  else:
+    if call.kind == nnkInfix and call[1][0].strVal == "command":
+      bot.commands.add(parseCommand(call))
+    else:
+      error("unknown directive", call)
+
+func parseTopLevel*(ast: NimNode): CommandBot =
+  var clientIdent, nameNode, defBody: NimNode
+  StmtList(ast).extract do:
+    defineDiscordBot(`clientIdent`, `nameNode`):
+      `defBody`
+
+  clientIdent.expectKind nnkIdent
+  nameNode.expectKind nnkStrLit
+  defBody.expectKind nnkStmtList
+
+  new(result)
+  result.clientIdent = clientIdent.strVal
+  result.name = nameNode.strVal
+  for call in defBody:
+    if call.kind != nnkDiscardStmt:
+      result.dispatchDefCall(call)
