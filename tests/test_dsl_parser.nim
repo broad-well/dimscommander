@@ -25,7 +25,13 @@ static:
 
       assert parseCommand(ast).name == "name"
 
-    # I can't verify errors...
+    test "reject call with unknown arguments":
+      let ast = quote do:
+        command("test", unknown=2, idk=1) as t:
+          discard
+
+      assertBadSyntax("Unknown named parameter: unknown"):
+        discard parseCommand(ast)
 
     test "accept help string literal as name only":
       let ast = quote do:
@@ -43,6 +49,24 @@ static:
 
       assert parseCommand(ast).help == (title: some("title help"),
                                         description: some("title description"))
+
+    test "reject help table constructor and others":
+      let nonconforming = [
+        quote do:
+          {"title": "title",
+           "description": "descr"}
+        ,quote do:
+          42
+        ,quote do:
+          'x'
+      ]
+      for nonconform in nonconforming:
+        let ast = quote do:
+          command("test", help=`nonconform`) as c:
+            discard c
+
+        assertBadSyntax("Unsupported assignment target for help"):
+          discard parseCommand(ast)
 
     test "accept args as unnamed tuple of typedescs":
       let ast = quote do:
@@ -68,6 +92,32 @@ static:
         Argument(label: some("second arg"), limits: InputLimits(inputType: Float)),
         Argument(label: some("third arg"), limits: InputLimits(inputType: String))
       ])
+
+    test "reject args as string or boolean, etc.":
+      let nonconforming = [
+        quote do:
+          "args are not strings"
+        ,quote do:
+          true
+        ,quote do:
+          [4, 1, 5]
+      ]
+
+      for nonconform in nonconforming:
+        let ast = quote do:
+          command("test", args=`nonconform`) as e:
+            discard e
+
+        assertBadSyntax("Unsupported assignment target for args"):
+          discard parseCommand(ast)
+
+    test "reject args as named tuple with specific error":
+      let ast = quote do:
+        command("test", args=(first: int, second: float)) as cmd:
+          discard cmd
+
+      assertBadSyntax("Args cannot be a named tuple"):
+        discard parseCommand(ast)
 
     test "accept code from spec":
       let handler = quote do:
@@ -114,7 +164,7 @@ static:
         commands("]"):
           command("test") as msg:
             discard msg
-      
+
       let commands = parseCommands(ast)
       assert commands[0].name == "]test"
 
@@ -127,14 +177,14 @@ static:
             discard g
           command("clang") as c:
             discard c
-      
+
       let commands = parseCommands(ast)
       assert commands.mapIt(it.name) == @[">make", ">gcc", ">clang"]
 
     test "extract setup block":
       let body = quote do:
         echo "hello bot!"
-      
+
       let ast = quote do:
         setup:
           `body`

@@ -19,8 +19,11 @@ func parseHelp(this: var CommandDef, target: NimNode) =
   of nnkPar: this.parseHelpTextTuple(target)
   of nnkStrLit: this.help.title = some(target.strVal)
   else:
-    error("Unsupported assignment target for help." &
-          " Try a string literal (\"...\") or a named tuple (title: ..., description: ...)", target)
+    raise BadSyntax(
+      node: target,
+      problem: "Unsupported assignment target for help",
+      suggestion: some("Try a string literal (\"...\") or " &
+                       "a named tuple (title: ..., description: ...)"))
 
 func singleArgToInputLimits(desc: NimNode): InputLimits =
   result.inputType = case desc.strVal
@@ -60,18 +63,26 @@ func parseCommandArgsTuple(this: var CommandDef, target: NimNode) =
   var args = newSeqOfCap[Argument](target.len)
   for arg in target.children():
     args.add Argument(limits: typedescToInputLimits(arg))
-
   this.args = some(args)
 
 func parseCommandArgs(this: var CommandDef, target: NimNode) =
   case target.kind
   of nnkPar:
+    if target.len > 0 and target[0].kind == nnkExprColonExpr:
+      raise BadSyntax(
+        node: target,
+        problem: "Args cannot be a named tuple",
+        suggestion: some("Try an unnamed tuple (int, float) or a table constructor" &
+                         "({\"param\": int})"))
     this.parseCommandArgsTuple(target)
   of nnkTableConstr:
     this.parseCommandArgsTable(target)
   else:
-    error("Unsupported assignment target for args." &
-          " Try a tuple (int, int, float) or a table constructor ({\"first param\": int})", target)
+    raise BadSyntax(
+      node: target,
+      problem: "Unsupported assignment target for args",
+      suggestion: some("Try a tuple (int, int, float) or a " &
+                       "table constructor ({\"first param\": int})"))
 
 func parseCallAssign(this: var CommandDef, attribute: string, target: NimNode) =
   case attribute
@@ -80,8 +91,10 @@ func parseCallAssign(this: var CommandDef, attribute: string, target: NimNode) =
   of "args":
     this.parseCommandArgs(target)
   else:
-    error("Unknown named parameter: " & attribute &
-          "; available parameters are 'help' and 'args'", target)
+    raise BadSyntax(
+      node: target,
+      problem: "Unknown named parameter: " & attribute,
+      suggestion: some("Available parameters are 'help' and 'args'"))
 
 
 func parseCallParams(this: var CommandDef, call: seq[NimNode]) =
@@ -116,7 +129,7 @@ func parseCommands*(ast: NimNode): seq[CommandDef] =
   let
     prefix = ast[1].strVal
     children = ast[2]
-  
+
   for child in children:
     if child.kind != nnkDiscardStmt:
       var command = parseCommand(child)

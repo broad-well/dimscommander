@@ -36,6 +36,11 @@ type
     initializer*: ?Handler
     name*: string
 
+  BadSyntax* = ref object of CatchableError
+    node*: NimNode
+    problem*: string
+    suggestion*: ?string
+
   # Begin component concepts
 
   CodeParser* = concept parser

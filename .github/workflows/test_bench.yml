@@ -19,7 +19,7 @@ jobs:
         nim-version: '1.2.0'
 
     - name: Test project
-      run: nimble test
+      run: nimble test -y
     
     - name: Run benchmarks
-      run: nimble bench
+      run: nimble bench -y
