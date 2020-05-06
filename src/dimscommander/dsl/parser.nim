@@ -59,7 +59,7 @@ func parseCommandArgsTable(this: var CommandDef, table: NimNode) =
 func parseCommandArgsTuple(this: var CommandDef, target: NimNode) =
   var args = newSeqOfCap[Argument](target.len)
   for arg in target.children():
-     args.add Argument(limits: typedescToInputLimits(arg))
+    args.add Argument(limits: typedescToInputLimits(arg))
 
   this.args = some(args)
 
@@ -105,6 +105,20 @@ func parseCommand*(ast: NimNode): CommandDef =
 
   new(result)
   result.parseCallParams(callArgs)
-  result.handler = handler
-  result.handlerParamIdent = handlerInput.strVal
+  result.handler = Handler(body: handler, paramIdent: handlerInput.strVal)
 
+
+func parseCommands*(ast: NimNode): seq[CommandDef] =
+  ast.expectKind nnkCall
+  ast[0].expectIdent "commands"
+  ast[1].expectKind nnkStrLit
+  ast[2].expectKind nnkStmtList
+  let
+    prefix = ast[1].strVal
+    children = ast[2]
+  
+  for child in children:
+    if child.kind != nnkDiscardStmt:
+      var command = parseCommand(child)
+      command.name = prefix & command.name
+      result.add command

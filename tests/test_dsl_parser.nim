@@ -2,6 +2,7 @@ import ./statictest
 import ../src/dimscommander/dsl/[parser, model]
 from options import some
 import macros
+from sequtils import mapIt
 from macroutils import StmtList
 
 template dump(t: untyped): untyped =
@@ -39,7 +40,7 @@ static:
         command("exam", help=(title: "title help",
                               description: "title description")) as _:
           discard
-          
+
       assert parseCommand(ast).help == (title: some("title help"),
                                         description: some("title description"))
 
@@ -47,7 +48,7 @@ static:
       let ast = quote do:
         command("typer", args=(int, float, string, varargs[int])) as _:
           discard
-      
+
       assert parseCommand(ast).args == some(@[
         Argument(limits: InputLimits(inputType: Int)),
         Argument(limits: InputLimits(inputType: Float)),
@@ -61,7 +62,7 @@ static:
                                     "second arg": float,
                                     "third arg": string}) as _:
           discard
-    
+
       assert parseCommand(ast).args == some(@[
         Argument(label: some("first arg"), limits: InputLimits(inputType: Int)),
         Argument(label: some("second arg"), limits: InputLimits(inputType: Float)),
@@ -71,7 +72,7 @@ static:
     test "accept code from spec":
       let handler = quote do:
         msg.reply("hello!")
-        
+
       let ast = quote do:
         command("test",
                 help=(title: "a test command",
@@ -79,7 +80,7 @@ static:
                 args={"number of elements": int,
                       "check limits": string}) as msg:
           `handler`
-      
+
       let expected = CommandDef(
         name: "test",
         help: (title: some("a test command"),
@@ -88,14 +89,44 @@ static:
           Argument(label: some("number of elements"), limits: InputLimits(inputType: Int)),
           Argument(label: some("check limits"), limits: InputLimits(inputType: String))
         ]),
-        handler: StmtList(handler),
-        handlerParamIdent: "msg"
+        handler: Handler(body: StmtList(handler), paramIdent: "msg")
       )
       let actual = parseCommand(ast)
-      
-      # Miraculously "assert expected == actual" fails here. Idk why.
+
+      # Miraculously "assert expected == actual" fails here. Probably because
+      # we are comparing ref objects?
       assert expected.name == actual.name
       assert expected.help == actual.help
       assert expected.args == actual.args
       assert expected.handler == actual.handler
-      assert expected.handlerParamIdent == actual.handlerParamIdent
+
+  block commandSetDefinition:
+    test "accept empty commands block":
+      let ast = quote do:
+        commands("]"):
+          discard
+
+      let commands = parseCommands(ast)
+      assert commands.len == 0
+
+    test "commands block adds prefix to 1 subcommand":
+      let ast = quote do:
+        commands("]"):
+          command("test") as msg:
+            discard msg
+      
+      let commands = parseCommands(ast)
+      assert commands[0].name == "]test"
+
+    test "commands block adds prefix to many subcommands":
+      let ast = quote do:
+        commands(">"):
+          command("make") as m:
+            discard m
+          command("gcc") as g:
+            discard g
+          command("clang") as c:
+            discard c
+      
+      let commands = parseCommands(ast)
+      assert commands.mapIt(it.name) == @[">make", ">gcc", ">clang"]
