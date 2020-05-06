@@ -1,8 +1,8 @@
 <div align="center">
-<img src="img/dimscommander.png" height="80">
-<h1>Dimscommander</h1>
-Abstractions and tools for quickly building command-based Discord chatbots.
-Depends on KrispPurg's <a href="https://github.com/krisppurg/dimscord">Dimscord</a>.
+    <img src="img/dimscommander.png" height="80">
+    <h1>Dimscommander</h1>
+    Abstractions and tools for quickly building command-based Discord chatbots.
+    Depends on KrispPurg's <a href="https://github.com/krisppurg/dimscord">Dimscord</a>.
 </div>
 
 ## Philosophies (in this order)
@@ -18,7 +18,6 @@ For maximum flexibility, the Dimscommander operational process is split into two
 ### Included Implementations
 
 * **Parsing macro syntax**: Standard
-
 * **Generating code for Dimscord**: CaseBrancher [WIP], HandlerTable [WIP]
 
 ## Are We Still Fast?
