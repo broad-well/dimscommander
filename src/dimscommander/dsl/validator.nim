@@ -13,6 +13,12 @@ func validateArgument(arg: Argument) =
       msg: "Cannot have input type varargs[varargs]",
       suggestion: some("If you wish to have no type restraints on each argument, use 'string'."))
 
+template `:=`(varIdent: untyped, value: typed): bool =
+  if value.isSome:
+    varIdent = value.unsafeGet
+    true
+  else:
+    false
 
 func validate*(bot: CommandBot) =
   if bot.name.isEmptyOrWhitespace:
@@ -21,7 +27,8 @@ func validate*(bot: CommandBot) =
       suggestion: some("Give your bot a name, like 'BobTheBot'."))
 
   # wouldn't "if let" or the walrus operator be a great idea?
-  if bot.initializer.isSome and bot.initializer.unsafeGet.kind != nnkStmtList:
+  var init: NimNode
+  if (init := bot.initializer) and init.kind != nnkStmtList:
     raise BadSyntax(
       node: bot.initializer.unsafeGet,
       msg: "Bot initializer must be a StmtList",
