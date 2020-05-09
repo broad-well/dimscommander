@@ -26,11 +26,10 @@ func validate*(bot: CommandBot) =
       msg: "Bot name cannot be empty",
       suggestion: some("Give your bot a name, like 'BobTheBot'."))
 
-  # wouldn't "if let" or the walrus operator be a great idea?
   var init: NimNode
   if (init := bot.initializer) and init.kind != nnkStmtList:
     raise BadSyntax(
-      node: bot.initializer.unsafeGet,
+      node: init,
       msg: "Bot initializer must be a StmtList",
       suggestion: some("This is most likely a macro parser problem. Please let the author know!"))
 
