@@ -30,7 +30,7 @@ static:
         command("test", unknown=2, idk=1) as t:
           discard
 
-      assertBadSyntax("Unknown named parameter: unknown"):
+      assertError(BadSyntax, "Unknown named parameter: unknown"):
         discard parseCommand(ast)
 
     test "accept help string literal as name only":
@@ -61,7 +61,7 @@ static:
           command("test", help=`nonconform`) as c:
             discard c
 
-        assertBadSyntax("Unsupported assignment target for help"):
+        assertError(BadSyntax, "Unsupported assignment target for help"):
           discard parseCommand(ast)
 
     test "accept args as unnamed tuple of typedescs":
@@ -101,7 +101,7 @@ static:
           command("test", args=`nonconform`) as e:
             discard e
 
-        assertBadSyntax("Unsupported assignment target for args"):
+        assertError(BadSyntax, "Unsupported assignment target for args"):
           discard parseCommand(ast)
 
     test "reject args as named tuple with specific error":
@@ -109,7 +109,7 @@ static:
         command("test", args=(first: int, second: float)) as cmd:
           discard cmd
 
-      assertBadSyntax("Args cannot be a named tuple"):
+      assertError(BadSyntax, "Args cannot be a named tuple"):
         discard parseCommand(ast)
 
     test "accept code from spec":
@@ -188,32 +188,27 @@ static:
 
   block integrationTests:
     test "defineDiscordBot passes name and ident":
-      let ast = quote do:
-        defineDiscordBot(bot, "A test bot"):
-          discard
+      let ast = StmtList quote do:
+        discard
 
       let bot = parseTopLevel(ast)
-      assert bot.name == "A test bot"
-      assert bot.clientIdent == "bot"
       assert bot.commands.len == 0
       assert bot.initializer == none(NimNode)
 
     test "defineDiscordBot dispatches commands block":
-      let ast = quote do:
-        defineDiscordBot(client, "A test client"):
-          commands("&"):
-            command("cmd") as cmd:
-              discard cmd
+      let ast = StmtList quote do:
+        commands("&"):
+          command("cmd") as cmd:
+            discard cmd
 
       let bot = parseTopLevel(ast)
       assert bot.commands.len == 1
       assert bot.commands[0].name == "&cmd"
 
     test "defineDiscordBot dispatches command block":
-      let ast = quote do:
-        defineDiscordBot(client, "A test client"):
-          command(">cmd") as cmd:
-            discard
+      let ast = StmtList quote do:
+        command(">cmd") as cmd:
+          discard
 
       let bot = parseTopLevel(ast)
       assert bot.commands.len == 1
@@ -221,10 +216,9 @@ static:
 
     test "defineDiscordBot dispatches setup block":
       let setup = quote do: discard
-      let ast = quote do:
-        defineDiscordBot(client, "A test client"):
-          setup:
-            `setup`
+      let ast = StmtList quote do:
+        setup:
+          `setup`
 
       let bot = parseTopLevel(ast)
       assert bot.initializer == some(StmtList setup)

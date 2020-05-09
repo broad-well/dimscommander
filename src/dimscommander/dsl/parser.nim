@@ -21,7 +21,7 @@ func parseHelp(this: var CommandDef, target: NimNode) =
   else:
     raise BadSyntax(
       node: target,
-      problem: "Unsupported assignment target for help",
+      msg: "Unsupported assignment target for help",
       suggestion: some("Try a string literal (\"...\") or " &
                        "a named tuple (title: ..., description: ...)"))
 
@@ -71,7 +71,7 @@ func parseCommandArgs(this: var CommandDef, target: NimNode) =
     if target.len > 0 and target[0].kind == nnkExprColonExpr:
       raise BadSyntax(
         node: target,
-        problem: "Args cannot be a named tuple",
+        msg: "Args cannot be a named tuple",
         suggestion: some("Try an unnamed tuple (int, float) or a table constructor" &
                          "({\"param\": int})"))
     this.parseCommandArgsTuple(target)
@@ -80,7 +80,7 @@ func parseCommandArgs(this: var CommandDef, target: NimNode) =
   else:
     raise BadSyntax(
       node: target,
-      problem: "Unsupported assignment target for args",
+      msg: "Unsupported assignment target for args",
       suggestion: some("Try a tuple (int, int, float) or a " &
                        "table constructor ({\"first param\": int})"))
 
@@ -93,7 +93,7 @@ func parseCallAssign(this: var CommandDef, attribute: string, target: NimNode) =
   else:
     raise BadSyntax(
       node: target,
-      problem: "Unknown named parameter: " & attribute,
+      msg: "Unknown named parameter: " & attribute,
       suggestion: some("Available parameters are 'help' and 'args'"))
 
 
@@ -158,19 +158,9 @@ func dispatchDefCall(bot: var CommandBot, call: NimNode) =
     else:
       error("unknown directive", call)
 
-func parseTopLevel*(ast: NimNode): CommandBot =
-  var clientIdent, nameNode, defBody: NimNode
-  StmtList(ast).extract do:
-    defineDiscordBot(`clientIdent`, `nameNode`):
-      `defBody`
-
-  clientIdent.expectKind nnkIdent
-  nameNode.expectKind nnkStrLit
+func parseTopLevel*(defBody: NimNode): CommandBot =
   defBody.expectKind nnkStmtList
-
   new(result)
-  result.clientIdent = clientIdent.strVal
-  result.name = nameNode.strVal
   for call in defBody:
     if call.kind != nnkDiscardStmt:
       result.dispatchDefCall(call)

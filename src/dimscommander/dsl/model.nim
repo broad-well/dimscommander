@@ -35,11 +35,9 @@ type
     commands*: seq[CommandDef]
     initializer*: ?NimNode
     name*: string
-    clientIdent*: string
 
   BadSyntax* = ref object of CatchableError
     node*: NimNode
-    problem*: string
     suggestion*: ?string
 
   # Begin component concepts

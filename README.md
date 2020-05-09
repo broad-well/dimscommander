@@ -13,11 +13,12 @@
 
 ## Overview of Process
 
-For maximum flexibility, the Dimscommander operational process is split into two components: **Parsing macro syntax** and **generating code for Dimscord**. A relatively stable intermediate representation is stored as [objects](src/dimscommander/dsl/model.nim) in the Nim compiler VM. An optimal implementation is included for each component, and these implementations are independently developed and tested.
+For maximum flexibility, the Dimscommander operational process is split into three components: **parsing macro syntax**, **semantic validation**, and **generating code for Dimscord**. A relatively stable intermediate representation is stored as [objects](src/dimscommander/dsl/model.nim) in the Nim compiler VM. An optimal implementation is included for each component, and these implementations are independently developed and tested.
 
 ### Included Implementations
 
 * **Parsing macro syntax**: Standard
+* **Semantic validation**: Standard [WIP]
 * **Generating code for Dimscord**: CaseBrancher [WIP], HandlerTable [WIP]
 
 ## Are We Still Fast?
