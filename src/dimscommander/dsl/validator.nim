@@ -13,7 +13,7 @@ func validateArgument(arg: Argument) =
       msg: "Cannot have input type varargs[varargs]",
       suggestion: some("If you wish to have no type restraints on each argument, use 'string'."))
 
-template `:=`(varIdent: untyped, value: typed): bool =
+template `:=`(varIdent: typed, value: typed): bool =
   if value.isSome:
     varIdent = value.unsafeGet
     true
