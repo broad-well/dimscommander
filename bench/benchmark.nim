@@ -13,7 +13,7 @@ when VERBOSE:
 
 proc bench*(name: string, timeLimitPerAttemptNs = high(float), attempts = 10000, body: proc()) =
   logger.log(lvlInfo, &"benchmarking {name} ({BENCH_TRIALS}x{attempts}) with time limit {timeLimitPerAttemptNs} ns...")
-  
+
   var trialResults: array[1..BENCH_TRIALS, float]
 
   for trial in 1..BENCH_TRIALS:
@@ -30,9 +30,9 @@ proc bench*(name: string, timeLimitPerAttemptNs = high(float), attempts = 10000,
     let nsSpent = finish - start
     let meanNsPerAttempt = nsSpent.float64 / attempts.float64
     logger.log(lvlDebug, &"{name}: trial {trial}: {nsSpent.float64 / NS_PER_MS}ms in {attempts} => mean = {meanNsPerAttempt}ns per attempt")
-    
+
     trialResults[trial] = meanNsPerAttempt
-  
+
   var trialStats: RunningStat
   trialStats.push(trialResults)
   logger.log(lvlInfo, &"{name} results per attempt: {trialStats.mean():.1f} ns ± {trialStats.standardDeviation():.1f} ns")

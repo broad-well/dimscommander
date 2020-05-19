@@ -1,5 +1,3 @@
-import ../src/dimscommander/dsl/model
-
 # For now, we just unwrap the block
 
 template test*(name: string, body: untyped): untyped =
