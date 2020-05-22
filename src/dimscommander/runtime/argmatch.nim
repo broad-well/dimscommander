@@ -1,5 +1,9 @@
 import ../dsl/model
 import options
+from sequtils import toSeq, map
+import sugar
+import macros
+import macroutils
 
 type ArgumentMismatch* = ref object of CatchableError
   nth*: int # starts from 0
@@ -8,8 +12,14 @@ type ArgumentMismatch* = ref object of CatchableError
 
 template isSign(ch: char): bool = ch in {'+', '-'}
 template isJustSign(str: string): bool = str.len == 1 and str[0].isSign
-template partitionAt(str: string, i: int): (string, string) =
+template partitionAt[T](str: T, i: int): (T, T) =
   (str[0..<i], str[(i+1)..^1])
+
+func search[T](s: seq[T]; pred: proc (t: T): bool): Option[int] {.inline.} =
+  for (index, item) in s.pairs():
+    if pred(item):
+      return some(index)
+  return none(int)
 
 func findOneOf(str: string, chars: set[char]): int {.inline.} =
   for i in 0..high(str):
@@ -57,30 +67,54 @@ func checkToken*(tokens: seq[string], i: int,
   of Float: tokens[i + 1].require(isFloat)
   else: discard
 
-func expectMinArgTypes*(tokens: seq[string], types: seq[InputType]) =
+func expectMinArgTypes*(tokens: seq[string], types: openArray[InputType]) =
   let numArgsGiven = tokens.len - 1
   if numArgsGiven < types.len:
     raise ArgumentMismatch(nth: numArgsGiven, badType: none(InputType),
                            expectedType: some(types[numArgsGiven]))
 
-func checkLeadingTypes*(tokens: seq[string], types: seq[InputType]) =
+func checkLeadingTypes*(tokens: seq[string], types: openArray[InputType]) =
   for i in 0..high(types):
     tokens.checkToken(i, types[i])
 
-func checkTrailingTypes*(tokens: seq[string], types: seq[InputType]) =
+func checkTrailingTypes*(tokens: seq[string], types: openArray[InputType]) =
   for i in 0..high(types):
     tokens.checkToken(tokens.len - types.len + i - 1, types[i])
 
-func codeToCheckTokens*(args: seq[Argument], tokenIdent: string): NimNode =
-  # TODO
-  discard
+func checkVarargs*(tokens: seq[string], leadLen: int,
+                   trailLen: int, argType: InputType) =
+  for i in leadLen..<(tokens.len - trailLen - 1):
+    tokens.checkToken(i, argType)
 
-# to be generated from codeToCheckTokens
-when false:
-  dumpTree:
-    tokens.expectMinArgLen(4)
-    const beginTypes = [Int, String, Float]
-    tokens.checkToken(0, Int)
-    const endTypes = [Int, String, String]
-    for i in 5..<(tokens.len - 3):
-      tokens.checkToken(i, String)
+func checkAllArgs*(tokens: seq[string];
+                   leading, trailing: openArray[InputType];
+                   varargType: Option[InputType] = none(InputType)) {.inline.} =
+  tokens.checkLeadingTypes(leading)
+  tokens.checkTrailingTypes(trailing)
+  if varargType.isSome:
+    tokens.checkVarargs(leading.len, trailing.len, varargType.get)
+  elif tokens.len - 1 > leading.len + trailing.len:
+    raise ArgumentMismatch(nth: tokens.len - 2,
+                           badType: some(String),
+                           expectedType: none(InputType))
+
+func codeToCheckTokens*(args: seq[Argument], tokenIdent: string): NimNode =
+  let
+    toArrayLit = (s: seq[InputType]) => Bracket s.map(it => it.newLit)
+    types = args.map(arg => arg.limits.inputType)
+    varargIndex = types.find(Varargs)
+    hasVarargs = varargIndex != -1
+    (leadTypes, trailTypes) = if hasVarargs: types.partitionAt(varargIndex)
+                              else: (types, @[])
+    (lead, trail) = (leadTypes.toArrayLit, trailTypes.toArrayLit)
+    minArgs = (leadTypes & trailTypes).toArrayLit
+    token = Ident tokenIdent
+
+  result = if hasVarargs:
+    superQuote do:
+      `token`.expectMinArgTypes(`minArgs`)
+      `token`.checkAllArgs(`lead`, `trail`, some(`types[varargIndex].newLit`))
+  else:
+    superQuote do:
+      `token`.expectMinArgTypes(`minArgs`)
+      `token`.checkAllArgs(`lead`, `trail`)
